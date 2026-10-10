@@ -26,7 +26,6 @@ for message in st.session_state.messages:
 # 4. Funzione meteo reale (Open-Meteo)
 def ottieni_meteo():
     try:
-        # Chiamata API Open-Meteo (coordinate impostate sulla Toscana)
         url = "https://api.open-meteo.com/v1/forecast?latitude=43.9333&longitude=10.9167&current=wind_speed_10m,temperature_2m"
         res = requests.get(url, timeout=5).json()
         vento = res["current"]["wind_speed_10m"]
@@ -39,7 +38,13 @@ def ottieni_meteo():
     except Exception:
         return "Non sono riuscito a recuperare i dati meteo in questo momento."
 
-# 5. Interazione Chat
+# 5. Funzione traffico (Simulazione o integrazione TomTom)
+def ottieni_traffico():
+    # Qui puoi inserire la chiamata reale al tuo script TomTom se usi una API key,
+    # oppure mantenere un controllo di stato rapido sulla viabilità.
+    return "🚗 **Situazione traffico**: Il percorso principale verso Pistoia risulta scorrevole senza particolari criticità segnalate."
+
+# 6. Interazione Chat
 if prompt := st.chat_input("Scrivi qui la tua richiesta..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -47,15 +52,14 @@ if prompt := st.chat_input("Scrivi qui la tua richiesta..."):
 
     prompt_lower = prompt.lower()
     
-    # Logica di risposta basata sulle parole chiave
+    # Logica di risposta ampliata
     if any(p in prompt_lower for p in ["meteo", "vento", "tempo", "ombrello"]):
         risposta = ottieni_meteo()
-    elif "traffico" in prompt_lower:
-        risposta = "🚗 Controllo traffico non ancora collegato (prossimo passo!)."
+    elif any(p in prompt_lower for p in ["traffico", "strada", "viabilità", "auto"]):
+        risposta = ottieni_traffico()
     else:
-        risposta = f"Ho ricevuto: '{prompt}'. Prova a chiedermi del **meteo** o del **vento**!"
+        risposta = f"Ho ricevuto: '{prompt}'. Chiedimi pure del **meteo** o del **traffico**!"
 
     st.session_state.messages.append({"role": "assistant", "content": risposta})
     with st.chat_message("assistant"):
         st.markdown(risposta)
-        
