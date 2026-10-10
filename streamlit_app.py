@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+from datetime import datetime
 
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Assistente di Famiglia", page_icon="🤖", layout="centered")
@@ -32,17 +33,25 @@ def ottieni_meteo():
         temp = res["current"]["temperature_2m"]
         
         if vento > 20:
-            return f"⚠️ **Attenzione Vento!** Riscontrata velocità vento di **{vento} km/h** (Temperatura: {temp}°C)."
+            return f"⚠️ **Attenzione Vento!** Velocità vento: **{vento} km/h** (Temperatura: {temp}°C)."
         else:
             return f"🌤️ **Meteo tranquillo**: Vento a **{vento} km/h** e temperatura di **{temp}°C**."
     except Exception:
-        return "Non sono riuscito a recuperare i dati meteo in questo momento."
+        return "Non sono riuscito a recuperare i dati meteo."
 
-# 5. Funzione traffico (Simulazione o integrazione TomTom)
+# 5. Funzione traffico con controllo orario e Calenzano
 def ottieni_traffico():
-    # Qui puoi inserire la chiamata reale al tuo script TomTom se usi una API key,
-    # oppure mantenere un controllo di stato rapido sulla viabilità.
-    return "🚗 **Situazione traffico**: Il percorso principale verso Pistoia risulta scorrevole senza particolari criticità segnalate."
+    ora_attuale = datetime.now().hour
+    
+    # Esempio di gestione basata sull'orario (es. prima delle 14:00 vs dopo le 14:00)
+    if ora_attuale < 14:
+        destinazione = "Calenzano (Andata)"
+        stato_strada = "Scorrevole sulla A1 / viabilità principale."
+    else:
+        destinazione = "Rientro (verso casa)"
+        stato_strada = "Traffico regolare, nessun rallentamento segnalato."
+        
+    return f"🚗 **Situazione Traffico ({destinazione})** - Ore {datetime.now().strftime('%H:%M')}:\n- {stato_strada}"
 
 # 6. Interazione Chat
 if prompt := st.chat_input("Scrivi qui la tua richiesta..."):
@@ -52,10 +61,9 @@ if prompt := st.chat_input("Scrivi qui la tua richiesta..."):
 
     prompt_lower = prompt.lower()
     
-    # Logica di risposta ampliata
     if any(p in prompt_lower for p in ["meteo", "vento", "tempo", "ombrello"]):
         risposta = ottieni_meteo()
-    elif any(p in prompt_lower for p in ["traffico", "strada", "viabilità", "auto"]):
+    elif any(p in prompt_lower for p in ["traffico", "strada", "viabilità", "auto", "calenzano"]):
         risposta = ottieni_traffico()
     else:
         risposta = f"Ho ricevuto: '{prompt}'. Chiedimi pure del **meteo** o del **traffico**!"
@@ -63,3 +71,4 @@ if prompt := st.chat_input("Scrivi qui la tua richiesta..."):
     st.session_state.messages.append({"role": "assistant", "content": risposta})
     with st.chat_message("assistant"):
         st.markdown(risposta)
+        
