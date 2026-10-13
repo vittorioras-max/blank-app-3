@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Assistente di Famiglia", page_icon="🤖", layout="centered")
@@ -24,7 +24,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 4. Funzione meteo reale (Open-Meteo)
+# 4. Funzione meteo reale (Open-Meteo con controllo vento)
 def ottieni_meteo():
     try:
         url = "https://api.open-meteo.com/v1/forecast?latitude=43.9333&longitude=10.9167&current=wind_speed_10m,temperature_2m"
@@ -33,25 +33,25 @@ def ottieni_meteo():
         temp = res["current"]["temperature_2m"]
         
         if vento > 20:
-            return f"⚠️ **Attenzione Vento!** Velocità vento: **{vento} km/h** (Temperatura: {temp}°C)."
+            return f"⚠️ **Attenzione Vento!** Rilevata una velocità di **{vento} km/h** (Temperatura: {temp}°C). Attenzione alle raffiche!"
         else:
             return f"🌤️ **Meteo tranquillo**: Vento a **{vento} km/h** e temperatura di **{temp}°C**."
     except Exception:
-        return "Non sono riuscito a recuperare i dati meteo."
+        return "Non sono riuscito a recuperare i dati meteo in questo momento."
 
-# 5. Funzione traffico con controllo orario e Calenzano
+# 5. Funzione traffico con orario italiano (+2 ore)
 def ottieni_traffico():
-    ora_attuale = datetime.now().hour
+    ora_italiana = datetime.utcnow() + timedelta(hours=2)
+    ora_attuale = ora_italiana.hour
     
-    # Esempio di gestione basata sull'orario (es. prima delle 14:00 vs dopo le 14:00)
     if ora_attuale < 14:
-        destinazione = "Calenzano (Andata)"
-        stato_strada = "Scorrevole sulla A1 / viabilità principale."
+        destinazione = "Calenzano (Andata lavoro)"
+        stato_strada = "Verifica in corso sulla viabilità principale verso Calenzano."
     else:
         destinazione = "Rientro (verso casa)"
-        stato_strada = "Traffico regolare, nessun rallentamento segnalato."
+        stato_strada = "Verifica in corso sul rientro."
         
-    return f"🚗 **Situazione Traffico ({destinazione})** - Ore {datetime.now().strftime('%H:%M')}:\n- {stato_strada}"
+    return f"🚗 **Situazione Traffico ({destinazione})** - Ore {ora_italiana.strftime('%H:%M')}:\n- {stato_strada}"
 
 # 6. Interazione Chat
 if prompt := st.chat_input("Scrivi qui la tua richiesta..."):
