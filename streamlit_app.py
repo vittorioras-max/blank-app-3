@@ -34,7 +34,6 @@ def controlla_ombrellone():
         vento = res["current"]["wind_speed_10m"]
         temp = res["current"]["temperature_2m"]
         
-        # Soglia di sicurezza vento (15-20 km/h)
         if vento >= 15:
             return f"🚨 ALLERTA VENTO ({vento} km/h) - Vento forte! Chiudi subito l'ombrellone. (Temp: {temp}°C)"
         else:
@@ -51,5 +50,28 @@ def controlla_traffico():
     else:
         destinazione = "Rientro a Casa"
         
-    return f"🚗 REPORT TRAFFICO ({destinazione}) - Ore {ora_italiana.strftime('%H:%M')}\n\n
-    
+    return f"🚗 REPORT TRAFFICO ({destinazione}) - Ore {ora_italiana.strftime('%H:%M')}: Viabilità monitorata per il percorso."
+
+# --- CHAT INTERATTIVA ---
+
+if prompt := st.chat_input("Chiedi del vento, dell'ombrellone o del traffico..."):
+    # Salva e mostra messaggio utente
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    prompt_low = prompt.lower()
+
+    # Logica risposte focalizzata
+    if any(k in prompt_low for k in ["vento", "ombrello", "ombrellone", "meteo", "tempesta", "radar", "fulmini", "pioggia", "neve", "temperatura", "caldo", "freddo", "gradi"]):
+        risposta = controlla_ombrellone()
+    elif any(k in prompt_low for k in ["traffico", "calenzano", "strada", "viabilità", "auto"]):
+        risposta = controlla_traffico()
+    else:
+        risposta = f"Ho ricevuto: '{prompt}'. Puoi chiedermi informazioni sullo **stato dell'ombrellone (vento)** o sul **traffico per Calenzano**."
+
+    # Salva e mostra risposta assistente
+    st.session_state.messages.append({"role": "assistant", "content": risposta})
+    with st.chat_message("assistant"):
+        st.markdown(risposta)
+        
