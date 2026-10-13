@@ -61,7 +61,7 @@ if prompt := st.chat_input("Scrivi qui la tua richiesta..."):
 
     prompt_lower = prompt.lower()
     
-    if any(p in prompt_lower for p in ["meteo", "vento", "tempo", "ombrello"]):
+    if any(p in prompt_lower for p in ["meteo", "vento", "tempo", "neve", "fulmini", "tempesta", "ombrello"]):
         risposta = ottieni_meteo()
     elif any(p in prompt_lower for p in ["traffico", "strada", "viabilità", "auto", "calenzano"]):
         risposta = ottieni_traffico()
