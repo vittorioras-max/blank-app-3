@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+import json
+import os
 from datetime import datetime, timedelta
 
 # Configurazione pagina stile chat
@@ -14,11 +16,24 @@ if password_inserita != "1234":
         st.error("Password errata.")
     st.stop()
 
-# Inizializzazione cronologia chat
+# --- GESTIONE STORICO CHAT DA FILE JSON ---
+FILE_STORICO = "chat_history.json"
+
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "👋 Ciao! Sono il tuo assistente. Monitoro la sicurezza dell'ombrellone e il traffico per Calenzano."}
-    ]
+    st.session_state.messages = []
+    # Prova a leggere lo storico dal file se esiste
+    if os.path.exists(FILE_STORICO):
+        try:
+            with open(FILE_STORICO, "r", encoding="utf-8") as f:
+                st.session_state.messages = json.load(f)
+        except Exception:
+            pass
+            
+    # Se il file non esiste o è vuoto, inserisce il messaggio di benvenuto predefinito
+    if not st.session_state.messages:
+        st.session_state.messages = [
+            {"role": "assistant", "content": "👋 Ciao! Sono il tuo assistente. Monitoro la sicurezza dell'ombrellone e il traffico per Calenzano."}
+        ]
 
 # Visualizzazione messaggi stile Telegram
 for msg in st.session_state.messages:
@@ -62,7 +77,6 @@ if prompt := st.chat_input("Chiedi del vento, dell'ombrellone o del traffico..."
 
     prompt_low = prompt.lower()
 
-    # Logica risposte focalizzata
     if any(k in prompt_low for k in ["vento", "ombrello", "ombrellone", "meteo", "tempesta", "radar", "fulmini", "pioggia", "neve", "temperatura", "caldo", "freddo", "gradi"]):
         risposta = controlla_ombrellone()
     elif any(k in prompt_low for k in ["traffico", "calenzano", "strada", "viabilità", "auto"]):
@@ -74,4 +88,8 @@ if prompt := st.chat_input("Chiedi del vento, dell'ombrellone o del traffico..."
     st.session_state.messages.append({"role": "assistant", "content": risposta})
     with st.chat_message("assistant"):
         st.markdown(risposta)
+        
+    # (Facoltativo per ora): Salvataggio locale dei messaggi interattivi
+    with open(FILE_STORICO, "w", encoding="utf-8") as f:
+        json.dump(st.session_state.messages, f, ensure_ascii=False, indent=4)
         
