@@ -36,6 +36,20 @@ def controlla_ombrellone():
         
         # Soglia di sicurezza vento (15-20 km/h)
         if vento >= 15:
-            return f"🚨 **ALLERTA VENTO ({vento} km/h)**\n\n⚠️ Vento forte rilevato! **Chiudi subito l'ombrellone.**\n(Temperatura attuale: {temp}°C)"
+            return f"🚨 ALLERTA VENTO ({vento} km/h) - Vento forte! Chiudi subito l'ombrellone. (Temp: {temp}°C)"
         else:
-            return f"🟢 **METEO SICURO ({vento} km/h)**\n\
+            return f"🟢 METEO SICURO ({vento} km/h) - Vento sotto la soglia. L'ombrellone può rimanere aperto. (Temp: {temp}°C)"
+    except Exception:
+        return "❌ Errore nel recupero dati meteo."
+
+def controlla_traffico():
+    ora_italiana = datetime.utcnow() + timedelta(hours=2)
+    ora = ora_italiana.hour
+    
+    if ora < 14:
+        destinazione = "Calenzano (Andata lavoro)"
+    else:
+        destinazione = "Rientro a Casa"
+        
+    return f"🚗 REPORT TRAFFICO ({destinazione}) - Ore {ora_italiana.strftime('%H:%M')}\n\n
+    
