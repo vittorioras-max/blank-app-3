@@ -66,7 +66,7 @@ def invia_dispatch_github(repo_name, event_type):
 
   url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
   headers = {
-      "Authorization": f"Bearer {github_token}",
+      "Authorization": f"token {github_token}",
       "Accept": "application/vnd.github+json",
   }
   payload = {"event_type": event_type}
@@ -88,7 +88,6 @@ def invia_dispatch_github(repo_name, event_type):
 
 
 def richiedi_meteo_ombrellone():
-  # Sostituisci 'NomeRepoMeteo' con il nome esatto del tuo repository meteo/ombrellone
   ok, msg = invia_dispatch_github(
       repo_name="NomeRepoMeteo", event_type="richiedi_meteo"
   )
