@@ -122,7 +122,7 @@ def invia_dispatch_github(repo_name, event_type):
 
 def richiedi_meteo_ombrellone():
   ok, msg = invia_dispatch_github(
-      repo_name="ombrellone-meteo", event_type="richiedi_meteo"
+      repo_name="Ombrellone-meteo", event_type="richiedi_meteo"
   )
   if ok:
     return (
