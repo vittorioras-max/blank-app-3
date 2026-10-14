@@ -45,17 +45,29 @@ for msg in st.session_state.messages:
   with st.chat_message(msg["role"]):
     st.markdown(msg["content"])
 
+# --- FUNZIONE SICURA PER IL TOKEN ---
+
+
+def get_github_token():
+  token = os.getenv("STREAMLIT_TOKEN") or os.getenv("GITHUB_TOKEN")
+  if token:
+    return token
+  try:
+    if "STREAMLIT_TOKEN" in st.secrets:
+      return st.secrets["STREAMLIT_TOKEN"]
+    if "GITHUB_TOKEN" in st.secrets:
+      return st.secrets["GITHUB_TOKEN"]
+  except Exception:
+    pass
+  return ""
+
+
 # --- FUNZIONE GENERICA TRIGGER GITHUB ---
 
 
 def invia_dispatch_github(repo_name, event_type):
   """Invia un evento repository_dispatch al repository GitHub specificato."""
-  github_token = (
-      os.getenv("STREAMLIT_TOKEN")
-      or st.secrets.get("STREAMLIT_TOKEN", "")
-      or os.getenv("GITHUB_TOKEN")
-      or st.secrets.get("GITHUB_TOKEN", "")
-  )
+  github_token = get_github_token()
 
   if not github_token:
     return (
