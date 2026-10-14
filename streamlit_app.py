@@ -49,16 +49,33 @@ for msg in st.session_state.messages:
 
 
 def get_github_token():
+  # 1. Prova dalle variabili d'ambiente
   token = os.getenv("STREAMLIT_TOKEN") or os.getenv("GITHUB_TOKEN")
   if token:
     return token
+
+  # 2. Prova dai secrets di Streamlit
   try:
-    if "STREAMLIT_TOKEN" in st.secrets:
-      return st.secrets["STREAMLIT_TOKEN"]
-    if "GITHUB_TOKEN" in st.secrets:
-      return st.secrets["GITHUB_TOKEN"]
-  except Exception:
-    pass
+    if hasattr(st, "secrets"):
+      # Controlla se esiste direttamente come chiave
+      if "STREAMLIT_TOKEN" in st.secrets:
+        return st.secrets["STREAMLIT_TOKEN"]
+      if "GITHUB_TOKEN" in st.secrets:
+        return st.secrets["GITHUB_TOKEN"]
+
+      # Se i secrets sono organizzati in sezioni, controlla la prima disponibile
+      for key in st.secrets:
+        if isinstance(st.secrets[key], str):
+          return st.secrets[key]
+        elif hasattr(st.secrets[key], "get"):
+          sub_dict = st.secrets[key]
+          if "STREAMLIT_TOKEN" in sub_dict:
+            return sub_dict["STREAMLIT_TOKEN"]
+          if "GITHUB_TOKEN" in sub_Dict:
+            return sub_dict["GITHUB_TOKEN"]
+  except Exception as e:
+    print(f"Errore lettura secrets: {e}")
+
   return ""
 
 
@@ -69,11 +86,15 @@ def invia_dispatch_github(repo_name, event_type):
   """Invia un evento repository_dispatch al repository GitHub specificato."""
   github_token = get_github_token()
 
+  # Se ancora non lo trova, stampiamo a scopo di debug le chiavi presenti in st.secrets (senza mostrare valori)
   if not github_token:
+    chiavi_presenti = (
+        list(st.secrets.keys()) if hasattr(st, "secrets") else "Nessun secret"
+    )
     return (
         False,
-        "⚠️ Token GitHub non configurato nei secrets dell'app (`GITHUB_TOKEN` o"
-        " `STREAMLIT_TOKEN`).",
+        f"⚠️ Token non trovato. Chiavi viste da st.secrets:"
+        f" {chiavi_presenti}",
     )
 
   url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
