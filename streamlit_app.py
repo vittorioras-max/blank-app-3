@@ -1,126 +1,156 @@
-from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
+import json
 import os
 import requests
-import base64
-import json
+import streamlit as st
 
-# 1. Recupero credenziali dai Secrets di GitHub
-TOMTOM_API_KEY = os.environ.get("TOMTOM_API_KEY")
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-GITHUB_TOKEN = os.environ.get(
-    "STREAMLIT_TOKEN"
-)  # Token con permessi di scrittura su blank-app-3
-
-
-# 2. Funzione per aggiornare la chat in blank-app-3 (uguale a quella del meteo)
-def aggiorna_chat_blank_app(testo_messaggio):
-  owner = "vittorioras-max"
-  repo = "blank-app-3"
-  path = "chat_history.json"
-
-  headers = {
-      "Authorization": f"token {GITHUB_TOKEN}",
-      "Accept": "application/vnd.github.v3+json",
-  }
-
-  url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
-
-  try:
-    response = requests.get(url, headers=headers)
-    storico = []
-    sha = None
-
-    if response.status_code == 200:
-      file_data = response.json()
-      sha = file_data["sha"]
-      decoded_content = base64.b64decode(file_data["content"]).decode("utf-8")
-      storico = json.loads(decoded_content)
-
-    # Aggiunge il nuovo messaggio alla cronologia
-    storico.append({
-        "role": "assistant",
-        "content": testo_messaggio,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    })
-
-    nuovo_contenuto_str = json.dumps(storico, ensure_ascii=False, indent=4)
-    nuovo_contenuto_b64 = base64.b64encode(
-        nuovo_contenuto_str.encode("utf-8")
-    ).decode("utf-8")
-
-    payload = {
-        "message": "Aggiornamento automatico traffico [skip ci]",
-        "content": nuovo_contenuto_b64,
-        "sha": sha,
-    }
-
-    put_res = requests.put(url, headers=headers, json=payload, timeout=10)
-    if put_res.status_code in [200, 201]:
-      print("💬 Chat di blank-app-3 aggiornata con successo!")
-    else:
-      print(
-          f"⚠️ Errore scrittura chat (HTTP {put_res.status_code}):"
-          f" {put_res.text}"
-      )
-
-  except Exception as e:
-    print(f"⚠️ Errore aggiornamento chat blank-app-3: {e}")
-
-
-# 3. Logica di calcolo del traffico con TomTom
-ora_italiana = datetime.utcnow() + timedelta(hours=2)
-ora = ora_italiana.hour
-
-# Selezione coordinate in base all'orario (andata o ritorno)
-if ora < 14:
-  destinazione = "Calenzano (Andata lavoro)"
-  origine_lat, origine_lon = 43.7855, 10.863  # Casa (esempio)
-  dest_lat, dest_lon = 43.8407, 11.167  # Lavoro (esempio)
-else:
-  destinazione = "Rientro a Casa"
-  origine_lat, origine_lon = 43.8407, 11.167
-  dest_lat, dest_lon = 43.7855, 10.863
-
-url_tomtom = (
-    f"https://api.tomtom.com/routing/1/calculateRoute/{origine_lat},{origine_lon}:{dest_lat},{dest_lon}/json?"
-    f"key={TOMTOM_API_KEY}&traffic=true"
+# Configurazione pagina stile chat
+st.set_page_config(
+    page_title="Assistente Domestico", page_icon="💬", layout="centered"
 )
 
-try:
-  res = requests.get(url_tomtom, timeout=10)
-  dati = res.json()
+st.title("💬 Assistente Domestico")
 
-  route = dati["routes"][0]["summary"]
-  tempo_impiegato = round(route["travelTimeInSeconds"] / 60)
-  traffico_ritardo = round(route.get("trafficDelayInSeconds", 0) / 60)
+# Controllo Password
+password_inserita = st.text_input("Password d'accesso:", type="password")
+if password_inserita != "1234":
+  if password_inserita != "":
+    st.error("Password errata.")
+  st.stop()
 
-  messaggio_finale = (
-      f"🚗 *REPORT TRAFFICO* ({destinazione}) - Ore"
-      f" {ora_italiana.strftime('%H:%M')}:\n\n- Tempo stimato: *"
-      f"{tempo_impiegato} min*\n- Ritardo per traffico: *"
-      f"{traffico_ritardo} min*"
+# --- GESTIONE STORICO CHAT DA FILE JSON ---
+FILE_STORICO = "chat_history.json"
+
+if "messages" not in st.session_state:
+  st.session_state.messages = []
+  if os.path.exists(FILE_STORICO):
+    try:
+      with open(FILE_STORICO, "r", encoding="utf-8") as f:
+        st.session_state.messages = json.load(f)
+    except Exception:
+      pass
+
+  if not st.session_state.messages:
+    st.session_state.messages = [{
+        "role": "assistant",
+        "content": (
+            "👋 Ciao! Sono il tuo assistente. Invio le richieste per il"
+            " monitoraggio dell'ombrellone e del traffico ai relativi"
+            " repository."
+        ),
+    }]
+
+# Visualizzazione messaggi stile Telegram
+for msg in st.session_state.messages:
+  with st.chat_message(msg["role"]):
+    st.markdown(msg["content"])
+
+# --- FUNZIONE GENERICA TRIGGER GITHUB ---
+
+
+def invia_dispatch_github(repo_name, event_type):
+  """Invia un evento repository_dispatch al repository GitHub specificato."""
+  github_token = os.getenv("GITHUB_TOKEN") or st.secrets.get(
+      "GITHUB_TOKEN", ""
   )
 
-  # 4. Invio su Telegram
-  url_tg = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-  payload_tg = {
-      "chat_id": TELEGRAM_CHAT_ID,
-      "text": messaggio_finale,
-      "parse_mode": "Markdown",
+  if not github_token:
+    return (
+        False,
+        "⚠️ Token GitHub non configurato nei secrets dell'app (`GITHUB_TOKEN`).",
+    )
+
+  url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
+  headers = {
+      "Authorization": f"Bearer {github_token}",
+      "Accept": "application/vnd.github+json",
   }
+  payload = {"event_type": event_type}
 
-  res_tg = requests.post(url_tg, data=payload_tg, timeout=10)
-  if res_tg.status_code == 200:
-    print("🚗 Report traffico inviato con successo su Telegram!")
+  try:
+    response = requests.post(url, headers=headers, json=payload, timeout=5)
+    if response.status_code == 204:
+      return True, f"📡 **Richiesta inviata al repository `{repo_name}`!**"
+    else:
+      return (
+          False,
+          f"❌ Errore risposta GitHub ({response.status_code}): {response.text}",
+      )
+  except Exception as e:
+    return False, f"❌ Errore di connessione con GitHub: {e}"
+
+
+# --- FUNZIONI COMANDO ---
+
+
+def richiedi_meteo_ombrellone():
+  # Sostituisci 'NomeRepoMeteo' con il nome esatto del tuo repository meteo/ombrellone
+  ok, msg = invia_dispatch_github(
+      repo_name="NomeRepoMeteo", event_type="richiedi_meteo"
+  )
+  if ok:
+    return (
+        "🌪️ **Richiesta controllo ombrellone inoltrata!**\n\nIl workflow sul"
+        " repository meteo è stato avviato e riceverai l'aggiornamento."
+    )
+  return msg
+
+
+def richiedi_traffico():
+  ok, msg = invia_dispatch_github(
+      repo_name="Traffic-cl", event_type="richiedi_traffico"
+  )
+  if ok:
+    return (
+        "🚗 **Richiesta report traffico inoltrata!**\n\nIl workflow `Report"
+        " Traffico TomTom` su GitHub è in esecuzione."
+    )
+  return msg
+
+
+# --- CHAT INTERATTIVA ---
+
+if prompt := st.chat_input("Chiedi del vento, dell'ombrellone o del traffico..."):
+  st.session_state.messages.append({"role": "user", "content": prompt})
+  with st.chat_message("user"):
+    st.markdown(prompt)
+
+  prompt_low = prompt.lower()
+
+  if any(
+      k in prompt_low
+      for k in [
+          "vento",
+          "ombrello",
+          "ombrellone",
+          "meteo",
+          "tempesta",
+          "radar",
+          "fulmini",
+          "pioggia",
+          "neve",
+          "temperatura",
+          "caldo",
+          "freddo",
+          "gradi",
+      ]
+  ):
+    risposta = richiedi_meteo_ombrellone()
+  elif any(
+      k in prompt_low
+      for k in ["traffico", "calenzano", "strada", "viabilità", "auto"]
+  ):
+    risposta = richiedi_traffico()
   else:
-    print(f"❌ Errore invio Telegram (HTTP {res_tg.status_code}):", res_tg.text)
+    risposta = (
+        f"Ho ricevuto: '{prompt}'. Puoi chiedermi informazioni sullo **stato"
+        " dell'ombrellone (vento)** o sul **traffico per Calenzano**."
+    )
 
-  # 5. Aggiorna la app Streamlit (blank-app-3)
-  aggiorna_chat_blank_app(messaggio_finale)
+  st.session_state.messages.append({"role": "assistant", "content": risposta})
+  with st.chat_message("assistant"):
+    st.markdown(risposta)
 
-except Exception as e:
-  print(f"❌ Errore nel calcolo del traffico o aggiornamento chat: {e}")
-  raise e
-    
+  with open(FILE_STORICO, "w", encoding="utf-8") as f:
+    json.dump(st.session_state.messages, f, ensure_ascii=False, indent=4)
+      
