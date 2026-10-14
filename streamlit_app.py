@@ -50,14 +50,18 @@ for msg in st.session_state.messages:
 
 def invia_dispatch_github(repo_name, event_type):
   """Invia un evento repository_dispatch al repository GitHub specificato."""
-  github_token = os.getenv("STREAMLIT_TOKEN") or st.secrets.get(
-      "STREAMLIT_TOKEN", ""
+  github_token = (
+      os.getenv("STREAMLIT_TOKEN")
+      or st.secrets.get("STREAMLIT_TOKEN", "")
+      or os.getenv("GITHUB_TOKEN")
+      or st.secrets.get("GITHUB_TOKEN", "")
   )
 
   if not github_token:
     return (
         False,
-        "⚠️ Token GitHub non configurato nei secrets dell'app (`STREAMLIT_TOKEN`).",
+        "⚠️ Token GitHub non configurato nei secrets dell'app (`GITHUB_TOKEN` o"
+        " `STREAMLIT_TOKEN`).",
     )
 
   url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
