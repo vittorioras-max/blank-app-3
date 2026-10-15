@@ -33,5 +33,10 @@
         "role": "assistant",
         "content": "🟢 *METEO SICURO*: Vento sotto la soglia dei 15 km/h nei prossimi 2 giorni. L'ombrellone può rimanere aperto.",
         "timestamp": "2026-10-15 21:27:05"
+    },
+    {
+        "role": "assistant",
+        "content": "🟢 *METEO SICURO*: Vento sotto la soglia dei 15 km/h nei prossimi 2 giorni. L'ombrellone può rimanere aperto.",
+        "timestamp": "2026-10-15 22:16:34"
     }
 ]
