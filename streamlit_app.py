@@ -87,7 +87,7 @@ for msg in st.session_state.messages:
 
 
 def get_github_token():
-  # Cerca prima il tuo secret esatto 'streamlit_token', poi le varianti maiuscole
+  # Cerca prima il tuo secret esatto 'streamlit_token', poi le varianti
   for nome_chiave in [
       "streamlit_token",
       "STREAMLIT_TOKEN",
@@ -120,9 +120,7 @@ def invia_dispatch_github(repo_name, event_type):
 
   url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
   headers = {
-      "Authorization": (
-          f"Bearer {github_token}"
-      ),  # CORRETTO: Usa Bearer per i Fine-grained tokens
+      "Authorization": f"Bearer {github_token}",
       "Accept": "application/vnd.github+json",
   }
   payload = {"event_type": event_type}
@@ -143,14 +141,14 @@ def invia_dispatch_github(repo_name, event_type):
 # --- FUNZIONI COMANDO SPECIFICHE ---
 
 
-def richiedi_meteo_generale():
+def richiedi_meteo():
   ok, msg = invia_dispatch_github(
       repo_name="meteo", event_type="richiedi_meteo"
   )
   if ok:
     return (
-        "📊 **Richiesta bollettino meteo generale inoltrata!**\n\nIl workflow"
-        " sul repository `meteo` è in esecuzione."
+        "📊 **Richiesta meteo inoltrata!**\n\nIl workflow sul repository"
+        " `meteo` è in esecuzione."
     )
   return msg
 
@@ -201,7 +199,7 @@ if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."
       k in prompt_low
       for k in ["meteo", "previsioni", "temperatura", "caldo", "freddo", "gradi"]
   ):
-    risposta = richiedi_meteo_generale()
+    risposta = richiedi_meteo()
   elif any(
       k in prompt_low
       for k in ["ombrello", "ombrellone", "vento", "tempesta", "raffiche"]
@@ -214,9 +212,9 @@ if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."
     risposta = richiedi_traffico()
   else:
     risposta = (
-        f"Ho ricevuto: '{prompt}'. Puoi chiedermi informazioni sul **meteo"
-        " generale**, sullo **stato dell'ombrellone (vento)** o sul **traffico"
-        " per Calenzano**."
+        f"Ho ricevuto: '{prompt}'. Puoi chiedermi informazioni sul **meteo**,"
+        " sullo **stato dell'ombrellone (vento)** o sul **traffico per"
+        " Calenzano**."
     )
 
   # Salvataggio risposta assistente
