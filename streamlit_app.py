@@ -55,7 +55,6 @@ def formatta_orario(timestamp_str):
     elif data_msg == oggi - timedelta(days=1):
       return f"Ieri {dt.strftime('%H:%M')}"
     else:
-      # Mesi in italiano per la formattazione
       mesi = [
           "gen",
           "feb",
@@ -88,16 +87,20 @@ for msg in st.session_state.messages:
 
 
 def get_github_token():
-  token = os.getenv("STREAMLIT_TOKEN") or os.getenv("GITHUB_TOKEN")
-  if token:
-    return token
-  try:
-    if "STREAMLIT_TOKEN" in st.secrets:
-      return st.secrets["STREAMLIT_TOKEN"]
-    if "GITHUB_TOKEN" in st.secrets:
-      return st.secrets["GITHUB_TOKEN"]
-  except Exception:
-    pass
+  # Cerca prima il tuo secret esatto 'streamlit_token', poi le varianti maiuscole
+  for nome_chiave in [
+      "streamlit_token",
+      "STREAMLIT_TOKEN",
+      "GITHUB_TOKEN",
+  ]:
+    token = os.getenv(nome_chiave)
+    if token:
+      return token
+    try:
+      if nome_chiave in st.secrets:
+        return st.secrets[nome_chiave]
+    except Exception:
+      pass
   return ""
 
 
@@ -111,13 +114,15 @@ def invia_dispatch_github(repo_name, event_type):
   if not github_token:
     return (
         False,
-        "⚠️ Token GitHub non configurato nei secrets dell'app (`GITHUB_TOKEN` o"
-        " `STREAMLIT_TOKEN`).",
+        "⚠️ Token GitHub non configurato nei secrets dell'app (verifica"
+        " `streamlit_token`).",
     )
 
   url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
   headers = {
-      "Authorization": f"token {github_token}",
+      "Authorization": (
+          f"Bearer {github_token}"
+      ),  # CORRETTO: Usa Bearer per i Fine-grained tokens
       "Accept": "application/vnd.github+json",
   }
   payload = {"event_type": event_type}
