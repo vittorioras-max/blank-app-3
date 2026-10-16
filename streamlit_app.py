@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 import requests
@@ -34,16 +34,55 @@ if "messages" not in st.session_state:
     st.session_state.messages = [{
         "role": "assistant",
         "content": (
-            "👋 Ciao! Sono il tuo assistente. Invio le richieste per il"
-            " monitoraggio dell'ombrellone e del traffico ai relativi"
-            " repository."
+            "👋 Ciao! Sono il tuo assistente. Posso gestire i report per"
+            " Meteo, Ombrellone e Traffico."
         ),
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }]
 
-# Visualizzazione messaggi stile Telegram
+
+# --- FUNZIONE PER FORMATTARE L'ORARIO STILE TELEGRAM/WHATSAPP ---
+def formatta_orario(timestamp_str):
+  if not timestamp_str:
+    return ""
+  try:
+    dt = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+    oggi = datetime.now().date()
+    data_msg = dt.date()
+
+    if data_msg == oggi:
+      return dt.strftime("%H:%M")
+    elif data_msg == oggi - timedelta(days=1):
+      return f"Ieri {dt.strftime('%H:%M')}"
+    else:
+      # Mesi in italiano per la formattazione
+      mesi = [
+          "gen",
+          "feb",
+          "mar",
+          "apr",
+          "mag",
+          "giu",
+          "lug",
+          "ago",
+          "set",
+          "ott",
+          "nov",
+          "dic",
+      ]
+      mese_txt = mesi[dt.month - 1]
+      return f"{dt.day:02d} {mese_txt}, {dt.strftime('%H:%M')}"
+  except Exception:
+    return ""
+
+
+# Visualizzazione messaggi stile chat con orario tipo Telegram/WhatsApp
 for msg in st.session_state.messages:
   with st.chat_message(msg["role"]):
     st.markdown(msg["content"])
+    orario_fmt = formatta_orario(msg.get("timestamp"))
+    if orario_fmt:
+      st.caption(f"🕒 {orario_fmt}")
 
 # --- FUNZIONE SICURA PER IL TOKEN ---
 
@@ -96,7 +135,19 @@ def invia_dispatch_github(repo_name, event_type):
     return False, f"❌ Errore di connessione con GitHub: {e}"
 
 
-# --- FUNZIONI COMANDO ---
+# --- FUNZIONI COMANDO SPECIFICHE ---
+
+
+def richiedi_meteo_generale():
+  ok, msg = invia_dispatch_github(
+      repo_name="meteo", event_type="richiedi_meteo"
+  )
+  if ok:
+    return (
+        "📊 **Richiesta bollettino meteo generale inoltrata!**\n\nIl workflow"
+        " sul repository `meteo` è in esecuzione."
+    )
+  return msg
 
 
 def richiedi_meteo_ombrellone():
@@ -106,8 +157,7 @@ def richiedi_meteo_ombrellone():
   if ok:
     return (
         "🌪️ **Richiesta controllo ombrellone inoltrata!**\n\nIl workflow sul"
-        " repository Ombrellone-meteo è stato avviato e riceverai"
-        " l'aggiornamento."
+        " repository `Ombrellone-meteo` è stato avviato."
     )
   return msg
 
@@ -126,30 +176,30 @@ def richiedi_traffico():
 
 # --- CHAT INTERATTIVA ---
 
-if prompt := st.chat_input("Chiedi del vento, dell'ombrellone o del traffico..."):
-  st.session_state.messages.append({"role": "user", "content": prompt})
+if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."):
+  ora_attuale = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+  # Salvataggio messaggio utente
+  st.session_state.messages.append({
+      "role": "user",
+      "content": prompt,
+      "timestamp": ora_attuale,
+  })
   with st.chat_message("user"):
     st.markdown(prompt)
+    st.caption(f"🕒 {formatta_orario(ora_attuale)}")
 
   prompt_low = prompt.lower()
 
+  # ROUTER PAROLE CHIAVE
   if any(
       k in prompt_low
-      for k in [
-          "vento",
-          "ombrello",
-          "ombrellone",
-          "meteo",
-          "tempesta",
-          "radar",
-          "fulmini",
-          "pioggia",
-          "neve",
-          "temperatura",
-          "caldo",
-          "freddo",
-          "gradi",
-      ]
+      for k in ["meteo", "previsioni", "temperatura", "caldo", "freddo", "gradi"]
+  ):
+    risposta = richiedi_meteo_generale()
+  elif any(
+      k in prompt_low
+      for k in ["ombrello", "ombrellone", "vento", "tempesta", "raffiche"]
   ):
     risposta = richiedi_meteo_ombrellone()
   elif any(
@@ -159,14 +209,22 @@ if prompt := st.chat_input("Chiedi del vento, dell'ombrellone o del traffico..."
     risposta = richiedi_traffico()
   else:
     risposta = (
-        f"Ho ricevuto: '{prompt}'. Puoi chiedermi informazioni sullo **stato"
-        " dell'ombrellone (vento)** o sul **traffico per Calenzano**."
+        f"Ho ricevuto: '{prompt}'. Puoi chiedermi informazioni sul **meteo"
+        " generale**, sullo **stato dell'ombrellone (vento)** o sul **traffico"
+        " per Calenzano**."
     )
 
-  st.session_state.messages.append({"role": "assistant", "content": risposta})
+  # Salvataggio risposta assistente
+  st.session_state.messages.append({
+      "role": "assistant",
+      "content": risposta,
+      "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+  })
   with st.chat_message("assistant"):
     st.markdown(risposta)
+    st.caption(f"🕒 {formatta_orario(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}")
 
+  # Salva la cronologia completa su file
   with open(FILE_STORICO, "w", encoding="utf-8") as f:
     json.dump(st.session_state.messages, f, ensure_ascii=False, indent=4)
       
