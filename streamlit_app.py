@@ -109,7 +109,8 @@ def get_github_token():
 
 def invia_dispatch_github(repo_name, event_type):
   """Invia un evento repository_dispatch al repository GitHub specificato."""
-  github_token = get_github_token()
+  # .strip() rimuove eventuali spazi o a capo invisibili copiati nei secret
+  github_token = get_github_token().strip()
 
   if not github_token:
     return (
@@ -119,8 +120,12 @@ def invia_dispatch_github(repo_name, event_type):
     )
 
   url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
+
+  # Sceglie automaticamente lo schema corretto in base al tipo di token
+  schema = "Bearer" if github_token.startswith("github_pat_") else "token"
+
   headers = {
-      "Authorization": f"Bearer {github_token}",
+      "Authorization": f"{schema} {github_token}",
       "Accept": "application/vnd.github+json",
   }
   payload = {"event_type": event_type}
