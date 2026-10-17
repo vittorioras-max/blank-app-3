@@ -98,5 +98,10 @@
         "role": "assistant",
         "content": "📊 *BOLLETTINO METEO COMPLETO* 🌤️\n\n📅 *Sabato 17/10:*\n• Temperature: min *12.2°C* / max *23.1°C*\n• Vento massimo stimato: *3.9 km/h*\n\n📅 *Domenica 18/10:*\n• Temperature: min *15.5°C* / max *22.3°C*\n• Vento massimo stimato: *8.4 km/h*\n",
         "timestamp": "2026-10-17 19:28:21"
+    },
+    {
+        "role": "assistant",
+        "content": "📊 *BOLLETTINO METEO COMPLETO* 🌤️\n\n📅 *Sabato 17/10:*\n• Temperature: min *12.2°C* / max *23.1°C*\n• Vento massimo stimato: *3.9 km/h*\n\n📅 *Domenica 18/10:*\n• Temperature: min *15.1°C* / max *21.9°C*\n• Vento massimo stimato: *9.7 km/h*\n",
+        "timestamp": "2026-10-17 19:35:33"
     }
 ]
