@@ -4,7 +4,7 @@ import os
 import requests
 import streamlit as st
 
-# Configurazione pagina stile chat
+# Configurazione della pagina
 st.set_page_config(
     page_title="Assistente Domestico", page_icon="💬", layout="centered"
 )
@@ -18,7 +18,7 @@ if password_inserita != "1234":
     st.error("Password errata.")
   st.stop()
 
-# --- GESTIONE STORICO CHAT DA FILE JSON ---
+# --- GESTIONE STORICO CHAT ---
 FILE_STORICO = "chat_history.json"
 
 if "messages" not in st.session_state:
@@ -41,18 +41,16 @@ if "messages" not in st.session_state:
     }]
 
 
-# --- FUNZIONE PER FORMATTARE L'ORARIO STILE TELEGRAM/WHATSAPP ---
+# --- FORMATTAZIONE ORARIO ---
 def formatta_orario(timestamp_str):
   if not timestamp_str:
     return ""
   try:
     dt = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
     oggi = datetime.now().date()
-    data_msg = dt.date()
-
-    if data_msg == oggi:
+    if dt.date() == oggi:
       return dt.strftime("%H:%M")
-    elif data_msg == oggi - timedelta(days=1):
+    elif dt.date() == oggi - timedelta(days=1):
       return f"Ieri {dt.strftime('%H:%M')}"
     else:
       mesi = [
@@ -69,13 +67,12 @@ def formatta_orario(timestamp_str):
           "nov",
           "dic",
       ]
-      mese_txt = mesi[dt.month - 1]
-      return f"{dt.day:02d} {mese_txt}, {dt.strftime('%H:%M')}"
+      return f"{dt.day:02d} {mesi[dt.month - 1]}, {dt.strftime('%H:%M')}"
   except Exception:
     return ""
 
 
-# Visualizzazione messaggi stile chat con orario tipo Telegram/WhatsApp
+# Visualizzazione messaggi
 for msg in st.session_state.messages:
   with st.chat_message(msg["role"]):
     st.markdown(msg["content"])
@@ -83,50 +80,28 @@ for msg in st.session_state.messages:
     if orario_fmt:
       st.caption(f"🕒 {orario_fmt}")
 
-# --- FUNZIONE SICURA PER IL TOKEN ---
 
-
-def get_github_token():
-  # Cerca prima il tuo secret esatto 'streamlit_token', poi le varianti
-  for nome_chiave in [
-      "streamlit_token",
-      "STREAMLIT_TOKEN",
-      "GITHUB_TOKEN",
-      "Streamlit_token",
-  ]:
-    token = os.getenv(nome_chiave)
-    if token:
-      return token
-    try:
-      if nome_chiave in st.secrets:
-        return st.secrets[nome_chiave]
-    except Exception:
-      pass
-  return ""
-
-
-# --- FUNZIONE GENERICA TRIGGER GITHUB ---
-
-
+# --- FUNZIONE COMUNICAZIONE GITHUB ---
 def invia_dispatch_github(repo_name, event_type):
-  """Invia un evento repository_dispatch al repository GitHub specificato."""
-  # .strip() rimuove eventuali spazi o a capo invisibili copiati nei secret
-  github_token = get_github_token().strip()
+  # Recupera il token ripulito da spazi
+  token = ""
+  try:
+    if "streamlit_token" in st.secrets:
+      token = str(st.secrets["streamlit_token"]).strip()
+  except Exception:
+    pass
 
-  if not github_token:
-    return (
-        False,
-        "⚠️ Token GitHub non configurato nei secrets dell'app (verifica"
-        " `streamlit_token`).",
-    )
+  if not token:
+    token = os.getenv("streamlit_token", "").strip()
+
+  if not token:
+    return False, "⚠️ Token GitHub non trovato nei secrets (`streamlit_token`)."
 
   url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
 
-  # Sceglie automaticamente lo schema corretto in base al tipo di token
-  schema = "Bearer" if github_token.startswith("github_pat_") else "token"
-
+  # Usa Bearer per i token moderni o classici compatibili
   headers = {
-      "Authorization": f"{schema} {github_token}",
+      "Authorization": f"Bearer {token}",
       "Accept": "application/vnd.github+json",
   }
   payload = {"event_type": event_type}
@@ -138,15 +113,13 @@ def invia_dispatch_github(repo_name, event_type):
     else:
       return (
           False,
-          f"❌ Errore risposta GitHub ({response.status_code}): {response.text}",
+          f"❌ Errore GitHub ({response.status_code}): {response.text}",
       )
   except Exception as e:
-    return False, f"❌ Errore di connessione con GitHub: {e}"
+    return False, f"❌ Errore di connessione: {e}"
 
 
-# --- FUNZIONI COMANDO SPECIFICHE ---
-
-
+# --- AZIONI SPECIFICHE ---
 def richiedi_meteo():
   ok, msg = invia_dispatch_github(
       repo_name="meteo", event_type="richiedi_meteo"
@@ -177,18 +150,16 @@ def richiedi_traffico():
   )
   if ok:
     return (
-        "🚗 **Richiesta report traffico inoltrata!**\n\nIl workflow `Report"
-        " Traffico TomTom` su GitHub è in esecuzione."
+        "🚗 **Richiesta report traffico inoltrata!**\n\nIl workflow sul"
+        " repository `Traffic-cl` è in esecuzione."
     )
   return msg
 
 
-# --- CHAT INTERATTIVA ---
-
+# --- INTERFACCIA CHAT ---
 if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."):
   ora_attuale = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-  # Salvataggio messaggio utente
   st.session_state.messages.append({
       "role": "user",
       "content": prompt,
@@ -200,7 +171,6 @@ if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."
 
   prompt_low = prompt.lower()
 
-  # ROUTER PAROLE CHIAVE
   if any(
       k in prompt_low
       for k in ["meteo", "previsioni", "temperatura", "caldo", "freddo", "gradi"]
@@ -223,7 +193,6 @@ if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."
         " Calenzano**."
     )
 
-  # Salvataggio risposta assistente
   st.session_state.messages.append({
       "role": "assistant",
       "content": risposta,
@@ -233,7 +202,6 @@ if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."
     st.markdown(risposta)
     st.caption(f"🕒 {formatta_orario(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}")
 
-  # Salva la cronologia completa su file
   with open(FILE_STORICO, "w", encoding="utf-8") as f:
     json.dump(st.session_state.messages, f, ensure_ascii=False, indent=4)
       
