@@ -92,6 +92,7 @@ def get_github_token():
       "streamlit_token",
       "STREAMLIT_TOKEN",
       "GITHUB_TOKEN",
+      "Streamlit_token",
   ]:
     token = os.getenv(nome_chiave)
     if token:
