@@ -131,7 +131,7 @@ def invia_dispatch_github(repo_name, event_type):
     return False, f"❌ **Errore di connessione:** {e}"
 
 
-# --- AZIONI PER I TRE REPOSITORY ---
+# --- AZIONI PER I TRE REPOSITORY (CON NOMI ESATTI) ---
 def richiedi_meteo():
   ok, msg = invia_dispatch_github(
       repo_name="meteo", event_type="richiedi_meteo"
