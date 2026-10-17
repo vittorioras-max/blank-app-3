@@ -83,7 +83,6 @@ for msg in st.session_state.messages:
 
 # --- FUNZIONE COMUNICAZIONE GITHUB ---
 def invia_dispatch_github(repo_name, event_type):
-  # Recupera il token ripulito da spazi
   token = ""
   try:
     if "streamlit_token" in st.secrets:
@@ -99,7 +98,6 @@ def invia_dispatch_github(repo_name, event_type):
 
   url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
 
-  # Usa Bearer per i token moderni o classici compatibili
   headers = {
       "Authorization": f"Bearer {token}",
       "Accept": "application/vnd.github+json",
@@ -165,9 +163,6 @@ if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."
       "content": prompt,
       "timestamp": ora_attuale,
   })
-  with st.chat_message("user"):
-    st.markdown(prompt)
-    st.caption(f"🕒 {formatta_orario(ora_attuale)}")
 
   prompt_low = prompt.lower()
 
@@ -198,10 +193,10 @@ if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."
       "content": risposta,
       "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
   })
-  with st.chat_message("assistant"):
-    st.markdown(risposta)
-    st.caption(f"🕒 {formatta_orario(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}")
 
   with open(FILE_STORICO, "w", encoding="utf-8") as f:
     json.dump(st.session_state.messages, f, ensure_ascii=False, indent=4)
-      
+
+  # Forza il ricaricamento immediato dell'interfaccia per mostrare i messaggi
+  st.rerun()
+    
