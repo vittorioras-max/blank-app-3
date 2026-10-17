@@ -83,5 +83,10 @@
         "role": "assistant",
         "content": "🟢 *METEO SICURO*: Vento sotto la soglia dei 15 km/h nei prossimi 2 giorni. L'ombrellone può rimanere aperto.",
         "timestamp": "2026-10-17 04:02:37"
+    },
+    {
+        "role": "assistant",
+        "content": "📊 *BOLLETTINO METEO COMPLETO* 🌤️\n\n📅 *Sabato 17/10:*\n• Temperature: min *12.2°C* / max *23.1°C*\n• Vento massimo stimato: *3.9 km/h*\n\n📅 *Domenica 18/10:*\n• Temperature: min *15.5°C* / max *22.3°C*\n• Vento massimo stimato: *8.4 km/h*\n",
+        "timestamp": "2026-10-17 18:38:28"
     }
 ]
