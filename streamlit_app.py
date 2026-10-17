@@ -4,21 +4,27 @@ import os
 import requests
 import streamlit as st
 
-# Configurazione della pagina
+# ==========================================
+# 1. CONFIGURAZIONE PAGINA
+# ==========================================
 st.set_page_config(
     page_title="Assistente Domestico", page_icon="💬", layout="centered"
 )
 
 st.title("💬 Assistente Domestico")
 
-# Controllo Password
+# ==========================================
+# 2. CONTROLLO ACCESSO (PASSWORD)
+# ==========================================
 password_inserita = st.text_input("Password d'accesso:", type="password")
 if password_inserita != "1234":
   if password_inserita != "":
     st.error("Password errata.")
   st.stop()
 
-# --- GESTIONE STORICO CHAT ---
+# ==========================================
+# 3. GESTIONE STORICO CHAT
+# ==========================================
 FILE_STORICO = "chat_history.json"
 
 if "messages" not in st.session_state:
@@ -30,6 +36,7 @@ if "messages" not in st.session_state:
     except Exception:
       pass
 
+  # Messaggio di benvenuto se lo storico è completamente vuoto
   if not st.session_state.messages:
     st.session_state.messages = [{
         "role": "assistant",
@@ -41,7 +48,7 @@ if "messages" not in st.session_state:
     }]
 
 
-# --- FORMATTAZIONE ORARIO ---
+# --- FORMATTAZIONE ORARIO TIPO TELEGRAM ---
 def formatta_orario(timestamp_str):
   if not timestamp_str:
     return ""
@@ -72,7 +79,7 @@ def formatta_orario(timestamp_str):
     return ""
 
 
-# Visualizzazione messaggi
+# Mostra i messaggi memorizzati a schermo
 for msg in st.session_state.messages:
   with st.chat_message(msg["role"]):
     st.markdown(msg["content"])
@@ -81,8 +88,11 @@ for msg in st.session_state.messages:
       st.caption(f"🕒 {orario_fmt}")
 
 
-# --- FUNZIONE COMUNICAZIONE GITHUB ---
+# ==========================================
+# 4. FUNZIONI DI COMUNICAZIONE CON GITHUB
+# ==========================================
 def invia_dispatch_github(repo_name, event_type):
+  # Recupera il token da Secrets o Variabili d'ambiente ripulendo eventuali spazi invisibili
   token = ""
   try:
     if "streamlit_token" in st.secrets:
@@ -94,7 +104,11 @@ def invia_dispatch_github(repo_name, event_type):
     token = os.getenv("streamlit_token", "").strip()
 
   if not token:
-    return False, "⚠️ Token GitHub non trovato nei secrets (`streamlit_token`)."
+    return (
+        False,
+        "⚠️ **Token GitHub non trovato.** Controlla i Secrets su Streamlit"
+        " Cloud.",
+    )
 
   url = f"https://api.github.com/repos/vittorioras-max/{repo_name}/dispatches"
 
@@ -111,13 +125,13 @@ def invia_dispatch_github(repo_name, event_type):
     else:
       return (
           False,
-          f"❌ Errore GitHub ({response.status_code}): {response.text}",
+          f"❌ **Errore GitHub ({response.status_code}):** {response.text}",
       )
   except Exception as e:
-    return False, f"❌ Errore di connessione: {e}"
+    return False, f"❌ **Errore di connessione:** {e}"
 
 
-# --- AZIONI SPECIFICHE ---
+# --- AZIONI PER I TRE REPOSITORY ---
 def richiedi_meteo():
   ok, msg = invia_dispatch_github(
       repo_name="meteo", event_type="richiedi_meteo"
@@ -154,16 +168,20 @@ def richiedi_traffico():
   return msg
 
 
-# --- INTERFACCIA CHAT ---
+# ==========================================
+# 5. GESTIONE INPUT UTENTE E CHAT
+# ==========================================
 if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."):
   ora_attuale = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+  # 1. Salva il messaggio inviato dall'utente
   st.session_state.messages.append({
       "role": "user",
       "content": prompt,
       "timestamp": ora_attuale,
   })
 
+  # 2. Analizza la richiesta in base alle parole chiave
   prompt_low = prompt.lower()
 
   if any(
@@ -178,7 +196,15 @@ if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."
     risposta = richiedi_meteo_ombrellone()
   elif any(
       k in prompt_low
-      for k in ["traffico", "calenzano", "strada", "viabilità", "auto"]
+      for k in [
+          "traffico",
+          "calenzano",
+          "strada",
+          "viabilità",
+          "auto",
+          "lavoro",
+          "casa",
+      ]
   ):
     risposta = richiedi_traffico()
   else:
@@ -188,15 +214,17 @@ if prompt := st.chat_input("Chiedi del meteo, dell'ombrellone o del traffico..."
         " Calenzano**."
     )
 
+  # 3. Salva la risposta dell'assistente
   st.session_state.messages.append({
       "role": "assistant",
       "content": risposta,
       "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
   })
 
+  # 4. Scrive la cronologia aggiornata nel file JSON
   with open(FILE_STORICO, "w", encoding="utf-8") as f:
     json.dump(st.session_state.messages, f, ensure_ascii=False, indent=4)
 
-  # Forza il ricaricamento immediato dell'interfaccia per mostrare i messaggi
+  # 5. Ricarica la pagina per mostrare immediatamente le novità a schermo
   st.rerun()
     
