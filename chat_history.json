@@ -123,5 +123,10 @@
         "role": "assistant",
         "content": "📊 *BOLLETTINO METEO COMPLETO* 🌤️\n\n📅 *Domenica 18/10:*\n• Temperature: min *14.1°C* / max *22.7°C*\n• Vento massimo stimato: *8.7 km/h*\n\n📅 *Lunedì 19/10:*\n• Temperature: min *12.9°C* / max *24.4°C*\n• Vento massimo stimato: *4.6 km/h*\n",
         "timestamp": "2026-10-18 08:51:51"
+    },
+    {
+        "role": "assistant",
+        "content": "🟢 *METEO SICURO*: Vento sotto la soglia dei 15 km/h nei prossimi 2 giorni. L'ombrellone può rimanere aperto.",
+        "timestamp": "2026-10-19 04:02:35"
     }
 ]
