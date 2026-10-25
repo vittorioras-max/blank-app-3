@@ -178,5 +178,10 @@
         "role": "assistant",
         "content": "🟢 *METEO SICURO*: vento medio sotto i 15 km/h, raffiche sotto i 20 km/h e nessun temporale nei prossimi 2 giorni. L'ombrellone può rimanere aperto.",
         "timestamp": "2026-10-24 06:02:30"
+    },
+    {
+        "role": "assistant",
+        "content": "🟢 *METEO SICURO*: vento medio sotto i 15 km/h, raffiche sotto i 20 km/h e nessun temporale nei prossimi 2 giorni. L'ombrellone può rimanere aperto.",
+        "timestamp": "2026-10-25 06:02:37"
     }
 ]
