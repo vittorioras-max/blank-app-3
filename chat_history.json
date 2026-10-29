@@ -198,5 +198,10 @@
         "role": "assistant",
         "content": "⚠️ *ALLERTA METEO* 💨⛈️\n\nPrevisti vento medio oltre 15 km/h, raffiche oltre 20 km/h e/o temporali nei prossimi 2 giorni.\n\n📅 *Giovedì 29/10:*\n• 💨 Vento forte: 11:00-19:00\n• Picco alle 14:00: raffiche fino a *33.8 km/h* (vento medio 19.4 km/h)\n\n🏠 *Si consiglia di chiudere tende e finestre e di mettere in sicurezza gli oggetti esposti sui balconi.*",
         "timestamp": "2026-10-28 06:02:42"
+    },
+    {
+        "role": "assistant",
+        "content": "⚠️ *ALLERTA METEO* 💨⛈️\n\nPrevisti vento medio oltre 15 km/h, raffiche oltre 20 km/h e/o temporali nei prossimi 2 giorni.\n\n📅 *Giovedì 29/10:*\n• 💨 Vento forte: 11:00-20:00\n• Picco alle 14:00: raffiche fino a *34.2 km/h* (vento medio 19.7 km/h)\n\n📅 *Venerdì 30/10:*\n• 💨 Vento forte: 10:00-19:00\n• Picco alle 15:00: raffiche fino a *35.6 km/h* (vento medio 19.1 km/h)\n\n🏠 *Si consiglia di chiudere tende e finestre e di mettere in sicurezza gli oggetti esposti sui balconi.*",
+        "timestamp": "2026-10-29 06:02:39"
     }
 ]
