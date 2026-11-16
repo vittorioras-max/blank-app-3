@@ -288,5 +288,10 @@
         "role": "assistant",
         "content": "🟢 *METEO SICURO*: vento medio sotto i 15 km/h, raffiche sotto i 20 km/h e nessun temporale nei prossimi 2 giorni. L'ombrellone può rimanere aperto.",
         "timestamp": "2026-11-15 16:42:46"
+    },
+    {
+        "role": "assistant",
+        "content": "⚠️ *ALLERTA METEO* 💨⛈️\n\nPrevisti vento medio oltre 15 km/h, raffiche oltre 20 km/h e/o temporali nei prossimi 2 giorni.\n\n📅 *Lunedì 16/11:*\n• 💨 Vento forte: 12:00-16:00\n• Picco alle 13:00: raffiche fino a *24.5 km/h* (vento medio 13.7 km/h)\n\n🏠 *Si consiglia di chiudere tende e finestre e di mettere in sicurezza gli oggetti esposti sui balconi.*",
+        "timestamp": "2026-11-16 06:02:38"
     }
 ]
